@@ -1,3 +1,15 @@
+<%-
+  base_slurm_args = []
+  slurm_args = base_slurm_args + resource.split
+-%>
 ---
 batch_connect:
   template: basic
+  conn_params:
+    - port
+    - host
+script:
+  native:
+    <%- slurm_args.each do |arg| %>
+    - "<%= arg %>"
+    <%- end %>

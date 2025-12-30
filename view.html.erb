@@ -3,7 +3,7 @@
   form_id = Digest::SHA1.hexdigest("--" + host.to_s + "--" + port.to_s + "--")
 -%>
 
-<form id="<%= form_id %>" method="post" target="_blank" onsubmit="getConnectionFile(<% host %>, <% port %>)">
+  <form id="<%= form_id %>" method="post" target="_blank" onsubmit="getConnectionFile(<%= host %>, <%= port %>)">
   <button class="btn btn-primary" type="submit">
     <i class="fa fa-eye"></i> Connect via desktop client
   </button>
@@ -11,7 +11,7 @@
 
 <script>
 function getConnectionFile(host, port) {
-  let [token, connectfile] = await Promise.all([fetch('/minitoken', {method: 'GET', headers: {'realm': 'vera'}}).then(r => r.text),
+  let [token, connectfile] = await Promise.all([fetch('/minitoken/exchange', {method: 'GET', headers: {'realm': 'vera'}}).then(r => r.text),
                                                 fetch('/rdpgw/connect?hostname=${host}&port=${port}', {method: 'GET'}).then(r => r.text)])
   connectfile = connectfile + '\npassword:s:' + token
   let blob = new Blob([connectfile], {type: 'text/plain'});

@@ -1,13 +1,12 @@
 # Make temporary xrdp .ini file pointing to right certs etc
-TMPINI=$(mktmp)
-echo $INITEMPLATE \
+TMPINI=$(mktemp)
+echo "$INITEMPLATE" \
   | sed "s%certificate=*.%certificate=$HOME/.config/xrdp/xrdp.crt%g" \
   | sed "s%key_file=.*%key_file=$HOME/.config/xrdp/xrdp.key%g" \
   | sed "s%LogFile=.*%LogFile=/dev/stdout%g" \
   > $TMPINI
 
 # Get xrdp port
-port=$(find_port)
 
 # Ensure .xsession is correctly set up.
 # dbus-launch is needed for multiple WMs.
@@ -22,4 +21,5 @@ xrdp -p $port -c $TMPINI -n&
 DISPLAY=$(xrdp-sesrun -P $port | grep -oP 'display=\K.*(?= \w)')
 
 # pidwait for display server.
-pidwait -ef "Xorg $DISPLAY"
+wait $(pgrep -f "Xorg $DISPLAY ")
+sleep 1000

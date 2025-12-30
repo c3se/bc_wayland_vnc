@@ -1,0 +1,43 @@
+---
+cluster:
+  - "alvis"
+form:
+  - cluster
+  - auto_accounts
+  - bc_num_hours
+  - resource
+  - bc_email_on_started
+attributes:
+  resource:
+    widget: "select"
+    label: "Resource"
+    options:
+      GPU: 
+        - [ "T4:1", "--gpus-per-node=T4:1" ]
+        - [ "T4:2", "--gpus-per-node=T4:2" ]  # alvis
+        - [ "T4:3", "--gpus-per-node=T4:3" ]  # alvis
+        - [ "T4:4", "--gpus-per-node=T4:4" ]  # alvis
+        - [ "T4:5", "--gpus-per-node=T4:5" ]  # alvis
+        - [ "T4:6", "--gpus-per-node=T4:6" ]  # alvis
+        - [ "T4:7", "--gpus-per-node=T4:7" ]  # alvis
+        - [ "T4:8", "--gpus-per-node=T4:8" ]  # alvis
+        - [ "V100:1", "--gpus-per-node=V100:1" ]
+        - [ "V100:2", "--gpus-per-node=V100:2" ]
+        - [ "V100:3", "--gpus-per-node=V100:3" ]
+        - [ "V100:4", "--gpus-per-node=V100:4" ]
+        - [ "A40:1", "--gpus-per-node=A40:1" ]
+        - [ "A40:2", "--gpus-per-node=A40:2" ]
+        - [ "A40:3", "--gpus-per-node=A40:3" ]
+        - [ "A40:4", "--gpus-per-node=A40:4" ]
+        - [ "A100:1", "--gpus-per-node=A100:1" ]
+        - [ "A100:2", "--gpus-per-node=A100:2" ]
+        - [ "A100:3", "--gpus-per-node=A100:3" ]
+        - [ "A100:4", "--gpus-per-node=A100:4" ]
+        - [ "A100fat:1", "--gpus-per-node=A100fat:1" ]  # alvis
+        - [ "A100fat:2", "--gpus-per-node=A100fat:2" ]  # alvis
+        - [ "A100fat:3", "--gpus-per-node=A100fat:3" ]  # alvis
+        - [ "A100fat:4", "--gpus-per-node=A100fat:4" ]  # alvis
+      CPU:  # alvis
+        - [ "1 core", "-C NOGPU -n 1" ]  # alvis
+        - [ "2 core", "-C NOGPU -n 2" ]  # alvis
+        - [ "4 core", "-C NOGPU -n 4" ]  # alvis
