@@ -21,5 +21,6 @@ xrdp -p $port -c $TMPINI -n&
 DISPLAY=$(xrdp-sesrun -P $port | grep -oP 'display=\K.*(?= \w)')
 
 # pidwait for display server.
-wait $(pgrep -f "Xorg $DISPLAY ")
-sleep 1000
+sleep 300
+PID=$(pgrep -f "Xorg $DISPLAY ")
+tail --pid "$PID" -f /dev/null & wait $!

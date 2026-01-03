@@ -3,25 +3,36 @@
   form_id = Digest::SHA1.hexdigest("--" + host.to_s + "--" + port.to_s + "--")
 -%>
 
-  <form id="<%= form_id %>" method="post" target="_blank" onsubmit="getConnectionFile(<%= host %>, <%= port %>)">
+  <form id="<%= form_id %>" method="get" target="_blank" onSubmit="getConnectionFile('<%= host %>', '<%= port %>'); return false;" >
   <button class="btn btn-primary" type="submit">
     <i class="fa fa-eye"></i> Connect via desktop client
   </button>
 </form>
 
 <script>
-function getConnectionFile(host, port) {
-  let [token, connectfile] = await Promise.all([fetch('/minitoken/exchange', {method: 'GET', headers: {'realm': 'vera'}}).then(r => r.text),
-                                                fetch('/rdpgw/connect?hostname=${host}&port=${port}', {method: 'GET'}).then(r => r.text)])
-  connectfile = connectfile + '\npassword:s:' + token
-  let blob = new Blob([connectfile], {type: 'text/plain'});
-  let url = window.URL.createObjectURL(blob);
-  let link = document.createElement('bloblink');
+function saveObjectToFile (rawObject, filenameWithExtension) {
+  object = new Blob([rawObject], {type: 'application/x-rdp'});
+  console.log('saveObjectToFile: object', object, 'filenameWithExtension', filenameWithExtension);
+  const url = window.URL.createObjectURL(object);
+  const link = document.createElement('a');
+  link.style.display = 'none';
   link.href = url;
-  link.download = 'connect.rdp';
+  link.target = '_blank';
+  link.download = filenameWithExtension;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  window.setTimeout(function () {
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }, 0)
+}
+async function getConnectionFile(host, port) {
+  // Get minitoken + gateway file, append token as password.  
+  let [token, connectfile] = await Promise.all([fetch('/minitoken/exchange', {method: 'GET'}).then(r => r.text()),
+                                                fetch('/rdpgw/connect?host=' + host + ':' + port, {method: 'GET'}).then(r => r.text())]);
+  connectfile = connectfile + 'password:s:' + token + '\n';
+  console.log('This is connectfile: ' + connectfile);
+  // Deliver file to user
+  saveObjectToFile(connectfile, 'connectfile.rdp')
 }
 </script>
