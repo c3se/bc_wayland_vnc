@@ -1,15 +1,41 @@
 <%-
-  # generate form id, based on host and port
-  form_id = Digest::SHA1.hexdigest("--" + host.to_s + "--" + port.to_s + "--")
+  # generate form id, based on host and port 
+  form_id_1 = Digest::SHA1.hexdigest("--" + host.to_s + "--" + port.to_s + "--" + "1")
+  form_id_2 = Digest::SHA1.hexdigest("--" + host.to_s + "--" + port.to_s + "--" + "2")
 -%>
-
-  <form id="<%= form_id %>" method="get" target="_blank" onSubmit="getConnectionFile('<%= host %>', '<%= port %>'); return false;" >
+<div style="display: flex; flex-direction: column; gap: 12pt;">
+<form id="<%= form_id_1 %>" method="get" target="_blank" onSubmit="getConnectionFile('<%= host %>', '<%= port %>'); return false;" >
   <button class="btn btn-primary" type="submit">
     <i class="fa fa-eye"></i> Connect via desktop client
   </button>
 </form>
 
+
+<form id="<%= form_id_2 %>" method="post" action="/guac/" target="<%= form_id_2 %>"  >
+  <input type="hidden" name="username" value='<%= username %>' />
+  <input type="hidden" name="password" value='' />
+  <input type="hidden" name="width" value='' />
+  <input type="hidden" name="height" value='' />
+  <input type="hidden" name="host" value='<%= host %>'/>
+  <input type="hidden" name="port" value='<%= port %>' />
+  <input type="hidden" name="guacdport" value='<%= guacdport %>' />
+  <button class="btn btn-primary" type="button" onclick="getConnectionParams('<%= form_id_2 %>'); return true;">
+    <i class="fa fa-eye"></i> Connect via web client
+  </button>
+</form>
+</div>
+
 <script>
+async function getConnectionParams(form_id) {
+  let form = document.getElementById(form_id);
+  // Get size of user window
+  form.elements["width"].value = Math.round(window.innerWidth);
+  form.elements["height"].value = Math.round(window.innerHeight);
+  // Get minitoken and use as password
+  form.elements["password"].value = await fetch('/minitoken/exchange', {method: 'GET'}).then(r => r.text());
+  // Submit form to open tab with remote desktop
+  form.submit();
+  }
 function saveObjectToFile (rawObject, filenameWithExtension) {
   object = new Blob([rawObject], {type: 'application/x-rdp'});
   console.log('saveObjectToFile: object', object, 'filenameWithExtension', filenameWithExtension);
@@ -30,7 +56,7 @@ async function getConnectionFile(host, port) {
   // Get minitoken + gateway file, append token as password.  
   let [token, connectfile] = await Promise.all([fetch('/minitoken/exchange', {method: 'GET'}).then(r => r.text()),
                                                 fetch('/rdpgw/connect?host=' + host + ':' + port, {method: 'GET'}).then(r => r.text())]);
-  connectfile = connectfile + 'password:s:' + token + '\n';
+  connectfile = connectfile.replace('%%TOKEN%%', token) + 'password:s:\n';
   console.log('This is connectfile: ' + connectfile);
   // Deliver file to user
   saveObjectToFile(connectfile, 'connectfile.rdp')

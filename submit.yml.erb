@@ -8,6 +8,8 @@ batch_connect:
   conn_params:
     - port
     - host
+    - guacdport
+    - username
 script:
   native:
     <%- slurm_args.each do |arg| %>

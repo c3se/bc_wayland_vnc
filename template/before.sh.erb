@@ -1,3 +1,5 @@
 # Export the module function if it exists
 [[ $(type -t module) == "function" ]] && export -f module
-port=$(find_port)
+export port=$(find_port)
+export guacdport=$(find_port)
+export username=$(getent passwd $(id -u) | cut -d: -f1)
