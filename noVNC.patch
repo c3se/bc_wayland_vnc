@@ -1,0 +1,26 @@
+diff --git a/apps/dashboard/public/noVNC-1.3.0/app/ui.js b/apps/dashboard/public/noVNC-1.3.0/app/ui.js
+index 15883648..fc20217f 100644
+--- a/apps/dashboard/public/noVNC-1.3.0/app/ui.js
++++ b/apps/dashboard/public/noVNC-1.3.0/app/ui.js
+@@ -1054,6 +1054,12 @@ const UI = {
+         if (password === null) {
+             password = undefined;
+         }
++
++        let username = WebUtil.getConfigVar('username');
++
++        if (username === null) {
++            username = undefined;
++        }
+
+         UI.hideStatus();
+
+@@ -1080,7 +1086,7 @@ const UI = {
+         UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
+                          { shared: UI.getSetting('shared'),
+                            repeaterID: UI.getSetting('repeaterID'),
+-                           credentials: { password: password } });
++                           credentials: { username: username, password: password } });
+         UI.rfb.addEventListener("connect", UI.connectFinished);
+         UI.rfb.addEventListener("disconnect", UI.disconnectFinished);
+         UI.rfb.addEventListener("credentialsrequired", UI.credentials);
