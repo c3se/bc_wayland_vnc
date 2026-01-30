@@ -1,47 +1,56 @@
 # Make temporary xrdp .ini file pointing to right certs etc
-TMPINI=$(mktemp)
-echo "$INITEMPLATE" \
-  | sed "s%certificate=*.%certificate=$HOME/.config/xrdp/xrdp.crt%g" \
-  | sed "s%key_file=.*%key_file=$HOME/.config/xrdp/xrdp.key%g" \
-  | sed "s%LogFile=.*%LogFile=/dev/stdout%g" \
-  > $TMPINI
+export XDG_RUNTIME_DIR=$(mktemp -d)
+export VNC_CONFIG_DIR=$(mktemp -d -p $XDG_RUNTIME_DIR)
+export VNC_CONFIG_FILE=$( mktemp -p $VNC_CONFIG_DIR )
+export SESSION_FILE=$(mktemp)
+export WAYVNC_UDS_PATH=$XDG_RUNTIME_DIR/wayvnc-uds-$SLURM_JOBID
+export WAYVNC_CTL_PATH=$XDG_RUNTIME_DIR/wayvnc-ctl-$SLURM_JOBID
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -sha384 \
+	-days 3650 -nodes -keyout $VNC_CONFIG_DIR/tls_key.pem -out $VNC_CONFIG_DIR/tls_cert.pem \
+	-subj /CN=localhost \
+	-addext subjectAltName=DNS:localhost,DNS:localhost,IP:127.0.0.1
 
-# Get xrdp port
-
-# Ensure .xsession is correctly set up.
-# dbus-launch is needed for multiple WMs.
-
-ENV_VARS=""
-
-if [[ ! -z "${OMP_NUM_THREADS}" ]]; then
-    ENV_VARS="${ENV_VARS} OMP_NUM_THREADS=${OMP_NUM_THREADS}"
-fi
-if [[ ! -z "${TMPDIR}" ]]; then
-    ENV_VARS="${ENV_VARS} TMPDIR=${TMPDIR}"
-fi
-if [[ ! -z "${SNIC_TMP}" ]]; then
-    ENV_VARS="${ENV_VARS} SNIC_TMP=${SNIC_TMP}"
-fi
-if [[ ! -z "${APPTAINER_CACHEDIR}" ]]; then
-    ENV_VARS="${ENV_VARS} APPTAINER_CACHEDIR=${APPTAINER_CACHEDIR}"
-fi
-if [[ ! -z "${VGL_DISPLAY}" ]]; then
-    ENV_VARS="${ENV_VARS} VGL_DISPLAY=${VGL_DISPLAY}"
-fi
-
-runstr="'eval \$(dbus-launch --sh-syntax) && xfce4-session' > \$HOME/.xsession"
-echo "echo $runstr" ' && eval $(dbus-launch --sh-syntax) && ' "${ENV_VARS} " 'xfce4-session' > $HOME/.xsession
-chmod 744 $HOME/.xsession
 # Start xrdp server listening to port in nodaemon mode
-xrdp -p $port -c $TMPINI -n&
+module use "$MODULEPATH:/apps/Test/fmodules/all"
+module load labwc Xfce wayvnc FFmpeg sway
 
-# Run xrdp-sesrun to force initiation of our session to ensure right cgroup.
-DISPLAY=$(xrdp-sesrun -P $port | grep -oP 'display=\K.*(?= \w)')
-echo "Display is $DISPLAY"
-# start guacd
-guacd -l $guacdport -b $(hostname -i) -C $HOME/.config/xrdp/xrdp.crt -K $HOME/.config/xrdp/xrdp.key -Linfo -f &
+cat > $VNC_CONFIG_FILE << EOF
+use_relative_paths=true
+enable_auth=true
+enable_pam=true
+private_key_file=tls_key.pem
+certificate_file=tls_cert.pem
+EOF
+
+cat > $SESSION_FILE << EOF
+xfce4-session &
+wayvnc -f120 -C $VNC_CONFIG_FILE -S $WAYVNC_CTL_PATH -u $WAYVNC_UDS_PATH &
+sleep 1
+swaybg -i $EBROOTXFCE/share/backgrounds/xfce/xfce-leaves.svg -m fill
+EOF
+
+chmod 744 $SESSION_FILE
+export WLR_BACKENDS=headless
+export WLR_LIBINPUT_NO_DEVICES=1
+export XDG_SESSION_TYPE=wayland
+has_gpu=$(nvidia-smi &> /dev/null && echo 1 || echo 0)
+if [ "$has_gpu" -eq 1 ]; then
+   export WLR_RENDER_DRM_DEVICE=$(readlink -f /dev/dri/by-path/pci-$(nvidia-smi --query-gpu=gpu_bus_id | tail -n1 | cut -c 5- | tr '[:upper:]' '[:lower:]')-render)
+   export WLR_RENDERER=vulkan
+   export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.x86_64.json
+   export VK_IMPLICIT_LAYER_PATH=/usr/share/vulkan/implicit_layer.d/
+   export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
+   export __EGL_VENDOR_LIBRARY_DIRS=/usr/share/glvnd/egl_vendor.d/
+   export GBM_BACKENDS_PATH=/usr/lib64/gbm
+   export GBM_BACKEND=nvidia-drm
+else
+   export WLR_RENDERER=pixman
+fi
+eval $(dbus-launch --sh-syntax)
+labwc -S $SESSION_FILE &
+PID=$!
+module purge
+rfbwebsockify $port --unix-target=$WAYVNC_UDS_PATH
 # pidwait for display server.
-sleep 300
 
-PID=$(pgrep -f "Xorg $DISPLAY ")
 tail --pid "$PID" -f /dev/null & wait $!

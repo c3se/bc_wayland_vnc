@@ -1,5 +1,6 @@
 # Export the module function if it exists
 [[ $(type -t module) == "function" ]] && export -f module
-export port=$(find_port)
-export guacdport=$(find_port)
+export port=$(find_port ${host})
+export vncport=$(find_port ${host})
+export password=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13; echo)
 export username=$(getent passwd $(id -u) | cut -d: -f1)
