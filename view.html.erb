@@ -26,11 +26,29 @@
 </div>
 
 <script>
+async function openSock(url) {
+  const ws = new WebSocket(url);
+  return new Promise((resolve, reject) => {
+    ws.addEventListener('open',  () => resolve(ws));
+    ws.addEventListener('error',  err => reject(ws));
+  });
+}  
+
 async function getWayNoVNCConnectionParams(form_id) {
   let form = document.getElementById(form_id);
   // Get size of user window
   // Get minitoken and use as password
   form.elements["password"].value = await fetch('/minitoken/exchange', {method: 'GET'}).then(r => r.text());
+  // wait for websockify to be ready
+  let success = 0;
+  while (success === 0) {
+      try {
+        err = await openSock('/rnode/<%= host %>/<%= port %>/websockify');
+        success = 1;
+      } catch {
+        success = 0;
+      }
+  }
   // Submit form to open tab with remote desktop
   form.submit();
   }
