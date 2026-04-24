@@ -1,4 +1,3 @@
-# Make temporary xrdp .ini file pointing to right certs etc
 export XDG_RUNTIME_DIR=$(mktemp -d)
 export VNC_CONFIG_DIR=$(mktemp -d -p $XDG_RUNTIME_DIR)
 export VNC_CONFIG_FILE=$( mktemp -p $VNC_CONFIG_DIR )
@@ -12,7 +11,6 @@ openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -sha384 \
 	-subj /CN=localhost \
 	-addext subjectAltName=DNS:localhost,DNS:localhost,IP:127.0.0.1
 
-# Start xrdp server listening to port in nodaemon mode
 module use "$MODULEPATH:/apps/Test/fmodules/all"
 module load labwc Xfce wayvnc FFmpeg sway
 
@@ -24,6 +22,7 @@ private_key_file=tls_key.pem
 certificate_file=tls_cert.pem
 EOF
 
+# Try to delay startup of swaybg so that it covers xfdesktop, better ways might exist
 sleepstr1="while [ \$(ps -p \$(pgrep -U \$(id -u) xfce4-session | tail -n1)  && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
 sleepstr2="while [ \$(ps -p \$(pgrep -U \$(id -u) xfdesktop | tail -n1)  && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
 sleepstr3="while [ \$(ps -p \$(pgrep -U \$(id -u) xfce4-panel | tail -n1) && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"

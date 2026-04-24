@@ -9,7 +9,6 @@ module purge && module restore
 # Ensure that the user's configured login shell is used
 export SHELL="$(getent passwd $USER | cut -d: -f7)"
 
-INITEMPLATE=$(cat "<%= session.staged_root.join("desktops", "xrdp.ini") %>")
 echo "Launching desktop..."
 source "<%= session.staged_root.join("desktops", "xfce.sh") %>"
 echo "Desktop ended with $? status..."
