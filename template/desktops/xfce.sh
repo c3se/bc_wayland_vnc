@@ -23,9 +23,9 @@ certificate_file=tls_cert.pem
 EOF
 
 # Try to delay startup of swaybg so that it covers xfdesktop, better ways might exist
-sleepstr1="while [ \$(ps -p \$(pgrep -U \$(id -u) xfce4-session | tail -n1)  && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
-sleepstr2="while [ \$(ps -p \$(pgrep -U \$(id -u) xfdesktop | tail -n1)  && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
-sleepstr3="while [ \$(ps -p \$(pgrep -U \$(id -u) xfce4-panel | tail -n1) && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
+sleepstr1="while [ \$(ps -p \$(pgrep -U \$(id -u) xfce4-session | tail -n1) 1>/dev/null && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
+sleepstr2="while [ \$(ps -p \$(pgrep -U \$(id -u) xfdesktop | tail -n1) 1>/dev/null && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
+sleepstr3="while [ \$(ps -p \$(pgrep -U \$(id -u) xfce4-panel | tail -n1) 1>/dev/null && echo 0 || echo 1) ]; do sleep 0.1; done; sleep 0.5"
 
 cat > $SESSION_FILE << EOF
 echo "\$WAYLAND_DISPLAY" > $VNC_DISPLAY_FILE
